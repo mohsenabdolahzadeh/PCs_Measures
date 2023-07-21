@@ -1,0 +1,13 @@
+function [] = Compute_Riesz_S_energy(X)
+
+Index = rangesearch(X,X,h);
+[num_p dim] = size(X);
+for i = 1:num_p
+    dxx = (X(i,1)-X(Index{i,1}(1,2:end),1));
+    dxx = dxx.^2;
+    dzz = (X(i,2)-X(Index{i,1}(1,2:end),2));
+    dzz = dzz.^2;
+    euclidian_distance = sqrt(dxx + dzz);
+    sum_euclidian_distance = sum(euclidian_distance(:,1));
+    riesz_s_energy(i) = 1/sum_euclidian_distance
+end

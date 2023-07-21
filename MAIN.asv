@@ -1,0 +1,488 @@
+
+clear all
+clc
+% This is a main script which executes the functions calculate the wieght.
+% S: Dimension of the space 
+% dim: A parameter for saving dimension 
+% xDim: Length of in x direction
+% zDim: lenghth in z direction 
+% MN: Number of Point cloud 1
+% X: A M*S matriix which includes a Set of point cloud
+% dx and dy are  s
+%**********************************************************
+ 
+% Dimension of the space 
+S = 2; 
+%Lengths of the rectangular
+xDim = 1.;  zDim = 1.; 
+dx = 0.0255; dz = 0.0255;  
+dim.xDim = xDim; dim.zDim = zDim;
+dim.dx = dx; dim.dz = dz;
+M = round(dim.xDim./dim.dx) ;
+N=  round(dim.zDim./dim.dz) ; 
+MN = M*N;
+
+% Correction of dim.dx
+dim.dx = dim.xDim/M; 
+
+% Correction of dim.dz
+dim.dz = dim.zDim/N; 
+
+% Calculating the smoothing length 
+h = 2.1*sqrt(dim.dx.^2 + dim.dz.^2); 
+
+%Smoothing length 
+dim.h = h; 
+ 
+
+G_outputDir1 = '/u/a/abdolahzadeh/Desktop/mohsen_bitbucket-gfdm_meshless_v0-55281cefa779/Measure_sin_Laplas_eq/Riesz_S_energy/'; % Specify the directory path
+G_fileExtension1 = '.txt'; % File extension
+
+G_outputDir2 = '/u/a/abdolahzadeh/Desktop/mohsen_bitbucket-gfdm_meshless_v0-55281cefa779/Measure_sin_Laplas_eq/InterParticleForce/'; % Specify the directory path
+G_fileExtension2 = '.txt'; % File extension
+
+G_outputDir3 = '/u/a/abdolahzadeh/Desktop/mohsen_bitbucket-gfdm_meshless_v0-55281cefa779/Measure_sin_Laplas_eq/Shifting_Rui_Xu/';
+G_fileExtension3 = '.txt'; % File extension
+
+G_outputDir4 = '/u/a/abdolahzadeh/Desktop/mohsen_bitbucket-gfdm_meshless_v0-55281cefa779/Measure_sin_Laplas_eq/MinDistance/'; % Specify the directory path
+G_fileExtension4 = '.txt'; % File extension
+
+G_outputDir5 = '/u/a/abdolahzadeh/Desktop/mohsen_bitbucket-gfdm_meshless_v0-55281cefa779/Measure_sin_Laplas_eq/LogEnergy/'; % Specify the directory path
+G_fileExtension5 = '.txt'; % File extension
+
+G_outputDir6 = '/u/a/abdolahzadeh/Desktop/mohsen_bitbucket-gfdm_meshless_v0-55281cefa779/Measure_sin_Laplas_eq/Fill_dis/'; % Specify the directory path
+G_fileExtension6 = '.txt'; % File extension
+
+G_outputDir7 = '/u/a/abdolahzadeh/Desktop/mohsen_bitbucket-gfdm_meshless_v0-55281cefa779/Measure_sin_Laplas_eq/RatioOfFillDisToMinDis/'; % Specify the directory path
+G_fileExtension7 = '.txt'; % File extension
+
+G_outputDir8 = '/u/a/abdolahzadeh/Desktop/mohsen_bitbucket-gfdm_meshless_v0-55281cefa779/Measure_sin_Laplas_eq/PackingDensity/'; % Specify the directory path
+G_fileExtension8 = '.txt'; % File extension
+
+G_outputDir9 = '/u/a/abdolahzadeh/Desktop/mohsen_bitbucket-gfdm_meshless_v0-55281cefa779/Measure_sin_Laplas_eq/GrothFun/'; % Specify the directory path
+G_fileExtension9 = '.txt'; % File extension
+
+G_outputDir10 = '/u/a/abdolahzadeh/Desktop/mohsen_bitbucket-gfdm_meshless_v0-55281cefa779/Measure_sin_Laplas_eq/ConVol/'; % Specify the directory path
+G_fileExtension10 = '.txt'; % File extension
+
+G_outputDir11 = '/u/a/abdolahzadeh/Desktop/mohsen_bitbucket-gfdm_meshless_v0-55281cefa779/Measure_sin_Laplas_eq/CoveringRadius/'; % Specify the directory path
+G_fileExtension11 = '.txt'; % File extension
+
+G_outputDir12 = '/u/a/abdolahzadeh/Desktop/mohsen_bitbucket-gfdm_meshless_v0-55281cefa779/Measure_sin_Laplas_eq/MeshRatio/'; % Specify the directory path
+G_fileExtension12 = '.txt'; % File extension
+
+G_outputDir13 = '/u/a/abdolahzadeh/Desktop/mohsen_bitbucket-gfdm_meshless_v0-55281cefa779/Measure_sin_Laplas_eq/StdDev/'; % Specify the directory path
+G_fileExtension13 = '.txt'; % File extension
+
+G_outputDir14 = '/u/a/abdolahzadeh/Desktop/mohsen_bitbucket-gfdm_meshless_v0-55281cefa779/Measure_sin_Laplas_eq/Torque/'; % Specify the directory path
+G_fileExtension14 = '.txt'; % File extension
+
+
+for numx = 0:5:50
+outputDir3 = strcat('/u/a/abdolahzadeh/Desktop/mohsen_bitbucket-gfdm_meshless_v0-55281cefa779/Measure_sin_Laplas_eq/Riesz_S_energy/PointWise/PCs',num2str(numx)); % Specify the directory path
+fileExtension3 = '.txt'; % File extension
+
+outputDir4 = strcat('/u/a/abdolahzadeh/Desktop/mohsen_bitbucket-gfdm_meshless_v0-55281cefa779/Measure_sin_Laplas_eq/InterParticleForce/PointWise/PCs',num2str(numx)); % Specify the directory path
+fileExtension4 = '.txt'; % File extension
+
+outputDir5 = strcat('/u/a/abdolahzadeh/Desktop/mohsen_bitbucket-gfdm_meshless_v0-55281cefa779/Measure_sin_Laplas_eq/Shifting_Rui_Xu/PointWise/PCs',num2str(numx)); % Specify the directory path
+fileExtension5 = '.txt'; % File extension
+
+outputDir6 = strcat('/u/a/abdolahzadeh/Desktop/mohsen_bitbucket-gfdm_meshless_v0-55281cefa779/Measure_sin_Laplas_eq/MinDistance/PointWise/PCs',num2str(numx)); % Specify the directory path
+fileExtension6 = '.txt'; % File extension
+
+outputDir7 = strcat('/u/a/abdolahzadeh/Desktop/mohsen_bitbucket-gfdm_meshless_v0-55281cefa779/Measure_sin_Laplas_eq/LogEnergy/PointWise/PCs',num2str(numx)); % Specify the directory path
+fileExtension7 = '.txt'; % File extension
+
+outputDir8 = strcat('/u/a/abdolahzadeh/Desktop/mohsen_bitbucket-gfdm_meshless_v0-55281cefa779/Measure_sin_Laplas_eq/Fill_dis/PointWise/PCs',num2str(numx)); % Specify the directory path
+fileExtension8 = '.txt'; % File extension
+
+outputDir9 = strcat('/u/a/abdolahzadeh/Desktop/mohsen_bitbucket-gfdm_meshless_v0-55281cefa779/Measure_sin_Laplas_eq/RatioOfFillDisToMinDis/PointWise/PCs',num2str(numx)); % Specify the directory path
+fileExtension9 = '.txt'; % File extension
+
+outputDir10 = strcat('/u/a/abdolahzadeh/Desktop/mohsen_bitbucket-gfdm_meshless_v0-55281cefa779/Measure_sin_Laplas_eq/PackingDensity/PointWise/PCs',num2str(numx)); % Specify the directory path
+fileExtension10 = '.txt'; % File extension
+
+outputDir11 = strcat('/u/a/abdolahzadeh/Desktop/mohsen_bitbucket-gfdm_meshless_v0-55281cefa779/Measure_sin_Laplas_eq/GrothFun/PointWise/PCs',num2str(numx)); % Specify the directory path
+fileExtension11 = '.txt'; % File extension
+
+outputDir12 = strcat('/u/a/abdolahzadeh/Desktop/mohsen_bitbucket-gfdm_meshless_v0-55281cefa779/Measure_sin_Laplas_eq/ConVol/PointWise/PCs',num2str(numx)); % Specify the directory path
+fileExtension12 = '.txt'; % File extension
+
+outputDir13 = strcat('/u/a/abdolahzadeh/Desktop/mohsen_bitbucket-gfdm_meshless_v0-55281cefa779/Measure_sin_Laplas_eq/CoveringRadius/PointWise/PCs',num2str(numx)); % Specify the directory path
+fileExtension13 = '.txt'; % File extension
+
+outputDir14 = strcat('/u/a/abdolahzadeh/Desktop/mohsen_bitbucket-gfdm_meshless_v0-55281cefa779/Measure_sin_Laplas_eq/MeshRatio/PointWise/PCs',num2str(numx)); % Specify the directory path
+fileExtension14 = '.txt'; % File extension
+
+outputDir15 = strcat('/u/a/abdolahzadeh/Desktop/mohsen_bitbucket-gfdm_meshless_v0-55281cefa779/Measure_sin_Laplas_eq/StdDev/PointWise/PCs',num2str(numx)); % Specify the directory path
+fileExtension15 = '.txt'; % File extension
+
+outputDir16 = strcat('/u/a/abdolahzadeh/Desktop/mohsen_bitbucket-gfdm_meshless_v0-55281cefa779/Measure_sin_Laplas_eq/Torque/PointWise/PCs',num2str(numx)); % Specify the directory path
+fileExtension16 = '.txt'; % File extension
+
+
+
+G_filename1 = sprintf('MeanRieszSEnergy_RMS%d%s', numx, G_fileExtension1);
+G_fullFilePath1 = fullfile(G_outputDir1, G_filename1);
+G_fid1 = fopen(G_fullFilePath1, 'w');
+
+G_filename2 = sprintf('MeanInterParticleFoorce_RMS%d%s', numx, G_fileExtension2);
+G_fullFilePath2 = fullfile(G_outputDir2, G_filename2);
+G_fid2 = fopen(G_fullFilePath2, 'w');
+
+G_filename3 = sprintf('MeanSPHCondition_RMS%d%s', numx, G_fileExtension3);
+G_fullFilePath3 = fullfile(G_outputDir3, G_filename3);
+G_fid3 = fopen(G_fullFilePath3, 'w');
+
+G_filename4 = sprintf('MeanMinDis_RMS%d%s', numx, G_fileExtension4);
+G_fullFilePath4 = fullfile(G_outputDir4, G_filename4);
+G_fid4 = fopen(G_fullFilePath4, 'w');
+
+G_filename5 = sprintf('MeanLogEnergy_RMS%d%s', numx, G_fileExtension5);
+G_fullFilePath5 = fullfile(G_outputDir5, G_filename5);
+G_fid5 = fopen(G_fullFilePath5, 'w');
+
+G_filename6 = sprintf('MeanFildistance_RMS%d%s', numx, G_fileExtension6);
+G_fullFilePath6 = fullfile(G_outputDir6, G_filename6);
+G_fid6 = fopen(G_fullFilePath6, 'w');
+
+G_filename7 = sprintf('MeanRatioFillDisMinDis_RMS%d%s', numx, G_fileExtension7);
+G_fullFilePath7 = fullfile(G_outputDir7, G_filename7);
+G_fid7 = fopen(G_fullFilePath7, 'w');
+
+G_filename8 = sprintf('PackingDensity_RMS%d%s', numx, G_fileExtension8);
+G_fullFilePath8 = fullfile(G_outputDir8, G_filename8);
+G_fid8 = fopen(G_fullFilePath8, 'w');
+
+G_filename9 = sprintf('GrothFunc_RMS%d%s', numx, G_fileExtension9);
+G_fullFilePath9 = fullfile(G_outputDir9, G_filename9);
+G_fid9 = fopen(G_fullFilePath9, 'w');
+
+G_filename10 = sprintf('ConditionVal_RMS%d%s', numx, G_fileExtension10);
+G_fullFilePath10 = fullfile(G_outputDir10, G_filename10);
+G_fid10 = fopen(G_fullFilePath10, 'w');
+
+G_filename11 = sprintf('CoveringRadius_RMS%d%s', numx, G_fileExtension11);
+G_fullFilePath11 = fullfile(G_outputDir11, G_filename11);
+G_fid11 = fopen(G_fullFilePath11, 'w');
+
+G_filename12 = sprintf('LocalMeshRatio_RMS%d%s', numx, G_fileExtension12);
+G_fullFilePath12 = fullfile(G_outputDir12, G_filename12);
+G_fid12 = fopen(G_fullFilePath12, 'w');
+
+G_filename13 = sprintf('LocalStdDev_RMS%d%s', numx, G_fileExtension13);
+G_fullFilePath13 = fullfile(G_outputDir13, G_filename13);
+G_fid13 = fopen(G_fullFilePath13, 'w');
+
+G_filename14 = sprintf('LocalStdDev_RMS%d%s', numx, G_fileExtension14);
+G_fullFilePath14 = fullfile(G_outputDir14, G_filename14);
+G_fid14 = fopen(G_fullFilePath14, 'w');
+
+
+
+ for run_n = 1:50
+filename3 = sprintf('RieszSEnergy_PWE%d%s', run_n, fileExtension3);
+fullFilePath3 = fullfile(outputDir3, filename3);
+fid3 = fopen(fullFilePath3, 'w');
+
+filename4 = sprintf('InterParticleFoorce_PWE%d%s', run_n, fileExtension4);
+fullFilePath4 = fullfile(outputDir4, filename3);
+fid4 = fopen(fullFilePath4, 'w');
+
+filename5 = sprintf('SPHCondition_PWE%d%s', run_n, fileExtension5);
+fullFilePath5 = fullfile(outputDir5, filename5);
+fid5 = fopen(fullFilePath5, 'w');
+
+filename6 = sprintf('MinDis_PWE%d%s', run_n, fileExtension6);
+fullFilePath6 = fullfile(outputDir6, filename6);
+fid6 = fopen(fullFilePath6, 'w');
+
+filename7 = sprintf('LogEnergy_PWE%d%s', run_n, fileExtension7);
+fullFilePath7 = fullfile(outputDir7, filename7);
+fid7 = fopen(fullFilePath7, 'w');
+
+filename8 = sprintf('Fildistance_PWE%d%s', run_n, fileExtension8);
+fullFilePath8 = fullfile(outputDir8, filename8);
+fid8 = fopen(fullFilePath8, 'w');
+
+filename9 = sprintf('RatioFillDisMinDis_PWE%d%s', run_n, fileExtension9);
+fullFilePath9 = fullfile(outputDir9, filename9);
+fid9 = fopen(fullFilePath9, 'w');
+
+filename10 = sprintf('PackingDensity_PWE%d%s', run_n, fileExtension10);
+fullFilePath10 = fullfile(outputDir10, filename10);
+fid10 = fopen(fullFilePath10, 'w');
+
+filename11 = sprintf('GrothFunc_PWE%d%s', run_n, fileExtension11);
+fullFilePath11 = fullfile(outputDir11, filename11);
+fid11 = fopen(fullFilePath11, 'w');
+
+filename12 = sprintf('ConditionVal_PWE%d%s', run_n, fileExtension12);
+fullFilePath12 = fullfile(outputDir12, filename12);
+fid12 = fopen(fullFilePath12, 'w');
+
+filename13 = sprintf('CoveringRadius_PWE%d%s', run_n, fileExtension13);
+fullFilePath13 = fullfile(outputDir13, filename13);
+fid13 = fopen(fullFilePath13, 'w');
+
+filename14 = sprintf('LocalMeshRatio_PWE%d%s', run_n, fileExtension14);
+fullFilePath14 = fullfile(outputDir14, filename14);
+fid14 = fopen(fullFilePath14, 'w');
+
+filename15 = sprintf('LocalStdDev_PWE%d%s', run_n, fileExtension15);
+fullFilePath15 = fullfile(outputDir15, filename15);
+fid15 = fopen(fullFilePath15, 'w');
+
+filename16 = sprintf('LocalStdDev_PWE%d%s', run_n, fileExtension16);
+fullFilePath16 = fullfile(outputDir16, filename16);
+fid16 = fopen(fullFilePath16, 'w');
+
+
+%Call GenerateSqurePointCloud function to generate regular point clouds
+%[X, nn,nb,nn_Top_St,nn_Top_End,nn_Right_St] = SqurePointCloudGeneration(S,M,N,MN,...
+ %   dim.dx,dim.dz,dim.xDim,dim.zDim,run_n); 
+ [X, nn, nb, nn_Top_St,nn_Top_End,nn_Right_St] = Load_geometry(run_n,numx);
+ 
+ %DT = delaunayTriangulation(X);
+ %IC = incenter(DT);
+ 
+% Total number of point clouds
+ MN = nn; 
+[MN AA]=size(X);
+[nn AA]=size(X);
+
+%Obtaining wieghts
+[wieghts,Index, Min_dis1,Min_dis2,Min_dis, Center,turqu_vec,delta_x,delta_z,deltam,AveR,F_in_par,MeshRatio,nc,groth,von_con,Energy_function,avedelta,Mean_Cross_RF] = LHSmatrix(X,h,MN,dx,dz,nb);
+%[AllCirArea,DevHexCir] = mesh_ratio(Min_dis,nb,MN);
+mean_groth = mean(groth);
+mean_von_con = mean(von_con);
+Mean_F_in_par = mean(F_in_par);
+%---------------------------------
+ [CVT_Vertices,variation_XVi]= CVT(X,nb);
+ XVi_mean = mean(variation_XVi);
+ [fill_distance,DT,cir_center] = fill_dis(X,nb);
+ [packing_density,area_of_percircles] = PackingDensity(Min_dis,nb,X);
+ [mesh_ratio,ave_mesh_ratio,local_mesh_ratio,covering_radious] = MeshRatio1(X,nb,Min_dis,CVT_Vertices);
+ [riesz_s_energy,mean_riesz_s_energy] = Compute_Riesz_S_energy(X,h);
+ %------------------------------------
+hole = 0;
+for i=1:1600
+if (nc{i,1}(1,1)==0)
+hole = hole+1;
+end
+end
+hole = hole/3600;
+%total_energy_function = sum(Energy_function);
+%Solving a Laplace equation 
+%[U,A]=Laplace_Equation(nn,nb,wieghts,nn_Top_St,nn_Top_End,dim.xDim,X);
+[U,A]=Poisson_Equation(nn,nb,wieghts,nn_Top_St,nn_Top_End,...
+    nn_Right_St,dim.xDim,X);
+
+
+% Call the Analytical function 
+[AnalyticalFunction, dx_AnalyticalFunction, dz_AnalyticalFunction, ...
+  d2dx2_AnalyticalFunction, d2dz2_AnalyticalFunction, ...
+    Laplase_Analytical_Function] = SineFunction(MN,X,dim.zDim,dim.xDim); 
+
+%Calculating errors
+[MRS_error, L_inf,point_wise_error] = Error_Cal(AnalyticalFunction, U,nn);
+%{
+plot3(X(:,1),X(:,2),ABS_Error(:,1),'d')
+xlabel('x','Fontsize',13);
+ylabel('y','Fontsize',13);
+zlabel('Absolute error','FontSize',13);
+%}
+% Plotting
+%Plotting(X,ABS_Error)
+
+%fprintf(fid,'%d\t%d\n',MRS_error,'%d\t%d\n');
+%y= [total_energy_function;MRS_error;L_inf];
+%fprintf(fid,'%f %f %f\n',y);
+%writematrix(MRS_error,fid,'Delimiter','tab');
+ 
+%fclose(fid);
+Vorices = DT.ConnectivityList;
+for i =1:3042
+    AT(i,1) = 1/2*abs((X(Vorices(i,2),1)-X(Vorices(i,1),1))*(X(Vorices(i,3),2)-X(Vorices(i,1),2))-(X(Vorices(i,3),1)-X(Vorices(i,1),1))*(X(Vorices(i,2),2)-X(Vorices(i,1),2)));
+
+end
+AA = mean(AT);
+%con1= mean(con);
+%*****************************************************
+%PLOTING
+local_ratio_filldis_mindis = cir_center(:,1)./Min_dis(nb+1:end,1);
+Mean_ratio_filldis_mindis = mean(local_ratio_filldis_mindis);
+dd = Min_dis1;
+rho = fill_distance/Min_dis1;
+
+MeanEnergy_function = mean(Energy_function);
+Mean_covering_radius = mean(covering_radious);
+y1= [mean_riesz_s_energy;MRS_error;L_inf];
+fprintf(G_fid1,'%f %f %f\n',y1);
+
+y2= [Mean_F_in_par;MRS_error;L_inf];
+fprintf(G_fid2,'%f %f %f\n',y2);
+
+y3= [avedelta;MRS_error;L_inf];
+fprintf(G_fid3,'%f %f %f\n',y3);
+
+y4= [Min_dis2;MRS_error;L_inf];
+fprintf(G_fid4,'%f %f %f\n',y4);
+
+y5= [MeanEnergy_function;MRS_error;L_inf];
+fprintf(G_fid5,'%f %f %f\n',y5);
+
+y6= [fill_distance;MRS_error;L_inf];
+fprintf(G_fid6,'%f %f %f\n',y6);
+
+y7= [Mean_ratio_filldis_mindis;MRS_error;L_inf];
+fprintf(G_fid7,'%f %f %f\n',y7);
+
+y8= [packing_density;MRS_error;L_inf];
+fprintf(G_fid8,'%f %f %f\n',y8);
+
+y9= [mean_groth;MRS_error;L_inf];
+fprintf(G_fid9,'%f %f %f\n',y9);
+
+y10= [mean_von_con;MRS_error;L_inf];
+fprintf(G_fid10,'%f %f %f\n',y10);
+
+y11= [Mean_covering_radius;MRS_error;L_inf];
+fprintf(G_fid11,'%f %f %f\n',y11);
+
+y12= [ave_mesh_ratio;MRS_error;L_inf];
+fprintf(G_fid12,'%f %f %f\n',y12);
+
+
+y13= [XVi_mean;MRS_error;L_inf];
+fprintf(G_fid13,'%f %f %f\n',y13);
+
+y14= [Mean_Cross_RF;MRS_error;L_inf];
+fprintf(G_fid14,'%f %f %f\n',y14);
+
+for i = 1:nn
+    % Loop over the columns of matrix A
+    for j = 1:1
+        % Print element from matrix A
+        fprintf(fid3, '%d\t', riesz_s_energy(i, j));
+        fprintf(fid4, '%d\t', F_in_par(i, j));
+        fprintf(fid5, '%d\t', deltam(i, j));
+        fprintf(fid6, '%d\t', Min_dis(i, j));
+        fprintf(fid7, '%d\t',  Energy_function(i, j));
+        fprintf(fid10, '%d\t',  area_of_percircles(i, j));
+        fprintf(fid11, '%d\t',  groth(i, j));
+        fprintf(fid12, '%d\t',  von_con(i, j));
+        fprintf(fid16, '%d\t',  turqu_vec(i, j));
+
+
+      
+    end
+    
+    % Print a tab to separate the matrices
+    fprintf(fid3, '\t');
+    
+    % Loop over the columns of matrix B
+    for j = 1:1
+        % Print element from matrix B
+        fprintf(fid3, '%d\t', point_wise_error(i, j));
+        fprintf(fid4, '%d\t', point_wise_error(i, j));
+        fprintf(fid5, '%d\t', point_wise_error(i, j));
+        fprintf(fid6, '%d\t', point_wise_error(i, j));
+        fprintf(fid7, '%d\t', point_wise_error(i, j));
+        fprintf(fid10, '%d\t', point_wise_error(i, j));
+        fprintf(fid11, '%d\t', point_wise_error(i, j));
+        fprintf(fid12, '%d\t', point_wise_error(i, j));
+        fprintf(fid16, '%d\t', point_wise_error(i, j));
+
+
+    end
+    
+    % Move to the next line after each row
+    fprintf(fid3, '\n');
+    fprintf(fid4, '\n');
+    fprintf(fid5, '\n');
+    fprintf(fid6, '\n');
+    fprintf(fid7, '\n');
+    fprintf(fid10, '\n');
+    fprintf(fid11, '\n');
+    fprintf(fid12, '\n');
+    fprintf(fid16, '\n');
+end
+
+
+for k = nb+1:nn
+    i = k-nb;
+
+    % Loop over the columns of matrix A
+    for j = 1:1
+        % Print element from matrix A
+        fprintf(fid8, '%d\t',  cir_center(i, j));
+        fprintf(fid9, '%d\t',  local_ratio_filldis_mindis(i, j));
+        fprintf(fid13, '%d\t',  covering_radious(i, j));
+        fprintf(fid14, '%d\t',  local_mesh_ratio(i, j));
+        fprintf(fid15, '%d\t',  variation_XVi(i, j));
+
+
+       
+    end
+    
+    % Print a tab to separate the matrices
+    fprintf(fid3, '\t');
+    
+    % Loop over the columns of matrix B
+    for j = 1:1
+        % Print element from matrix B
+        fprintf(fid8, '%d\t', point_wise_error(i, j));
+        fprintf(fid9, '%d\t', point_wise_error(i, j));
+        fprintf(fid13, '%d\t', point_wise_error(i, j));
+        fprintf(fid14, '%d\t', point_wise_error(i, j));
+        fprintf(fid15, '%d\t', point_wise_error(i, j));
+
+    end
+    
+    % Move to the next line after each row
+    fprintf(fid8, '\n');
+    fprintf(fid9, '\n');
+    fprintf(fid13, '\n');
+    fprintf(fid14, '\n');
+    fprintf(fid15, '\n');
+end
+
+
+fclose(fid3);
+fclose(fid4);
+fclose(fid5);
+fclose(fid6);
+fclose(fid7);
+fclose(fid8);
+fclose(fid9);
+fclose(fid10);
+fclose(fid11);
+fclose(fid12);
+fclose(fid13);
+fclose(fid14);
+fclose(fid15);
+fclose(fid16);
+
+
+%{
+y3= [Min_dis(:,1);point_wise_error(:,1)];
+fprintf(fid3,'%f %f',y3);
+%}
+ end
+ disp(numx);  % Display a string
+
+end
+%disp(Result{1,1})
+%plot3(X(:,1),X(:,2),AnalyticalFunction(:,1),'d')
+%hold on
+%plot3(X(:,1),X(:,2),U(:,1),'d')
+%legend('Present Meshfree','Analytical Solution')
+%hold on
+%plot3(X(:,1),X(:,2),dx_AnalyticalFunction(:,1),'d');
+%plot(X(:,1),X(:,2),'d') 
+ %triplot(DT);
+ %Min_dis = Min_dis/min(Min_dis)
+
+ 

@@ -1,0 +1,259 @@
+function [w, grf2, condn] = L2Stencil(z, X, porder, mu, cz, dorder)
+% Function L2Stencil: weights of a least squares numerical differentiation formula 
+%
+% Compute the weights of a least squares numerical differentiation formula for a number (no) of homogeneous differential operators
+% D_i (of possibly different orders) at a point z in R^d given function values at X\subset R^d, which is exact for polynomials up to order q=order.
+% Also returns the ||.||_{2,mu} growth functions for all operators and the condition number of the least squares problem.
+%
+% INPUT
+%
+% z -- a row d-vector representing a point in R^d where the values D_i f(z) are estimated
+% X -- an (np x d)-matrix of np points in R^d
+% porder -- polynomial order (degree+1) (integer >= 1)
+% mu -- power of the least square weights (a real number >= 0)
+% cz -- (polydim x no)- matrix of the coefficients alpha!c_alpha(i) (in columns) 
+%       for each homogeneous differential operator D_i = sum_{|alpha|=dorder(i)} c_alpha(i) partial^alpha,
+%       where polydim = nchoosek(porder+d-1,d) is the dimension of polynomials of order porder, 
+%       and no is the number of operators
+% dorder -- (1 x no) -vector of the orders of the homogeneous differential operators D_i
+%
+% OUTPUT
+%
+% w -- an (np x no)-matrix whose columns are the stencil weights for
+%      the corresponding partial derivatives evaluated  z 
+% grf2 -- (1 x no)-vector of  ||.||_{2,mu} growth functions for all  partial derivatives 
+%          with order q=porder and power mu at z
+% condn -- condition number of the least squares problem
+%
+% WARNING: The results will be wrong for each column of cz corresponding to a non-homogeneous differential operator
+% (because of inconsistent scaling). Such operators should be split into a sum of homogeneous ones and the resulting
+% weights summed up.
+% WARNING: If mu>0 and z belongs to X, then we ASSUME that z=x_1 and all other points are different from z. 
+% TODO: consider methods based on the cheaper normal equations and QR-factorization instead of SVD, try also lscov and pinv.
+% TODO: replace condn by solution dependent condition numbers for each operator
+%O. Davydov and R. Schaback, Minimal numerical differentiation formulas, Numer. Math., 140 (2018), 
+% 555-592. doi:10.1007/s00211-018-0973-3
+%
+% INFO
+%
+% The weights are obtained by minimizing ||w||_{2,mu}^2 = sum_j w_j^2\|x_j-z\|_2^(2*mu) subject to exactness for polynomials
+% of order porder, see [1] O. Davydov and R. Schaback, Minimal numerical differentiation formulas, Numer. Math., 140 (2018), 
+% 555-592. doi:10.1007/s00211-018-0973-3
+% However, in contrast to [1] we do not assume that the Vandermond matrix has full rank. In particular, there is no a priori 
+% restriction on the number of points which may be less than the polynomial degree. For example, the code will find the standard
+% FD stencil for Laplacian on the five point star.
+%
+% The minimization subject to the polynomial exactness is done by  solving the general linear least squares using SVD 
+% (see e.g. Theorem 1.2.10 in Björck Å. Numerical methods for least squares problems. SIAM, 1996).
+% This means that we actually look for the minimum of  sum_j w_j^2\|x_j-z\|_2^(2*mu) among vectors w that give the least 
+% squares minimum solution for the exactness equations. This gives exact formulas if they exist, but only approximately exact otherwise. 
+% We check the residual and return w = NaN;  grf2 = Inf;  condn = Inf; if the exactness is not satisfied up to rounding error. 
+%
+%
+% COPYRIGHT & LICENSE
+%
+% Copyright (C) 2012-2020 Oleg Davydov <oleg.davydov@math.uni-giessen.de>
+%
+% This file is part of mFDlab released under GNU General Public License v2.0.
+% See the file README for further details.
+
+
+%flag to produce a warning if the defect of polynomial exactness exceeds a tolarance
+nonexact_warning = 0;
+
+%shift z and centers to make z=0
+X = bsxfun(@minus,X,z);
+%z = zeros(1,dim);
+
+
+%"upscaling" preconditioning to use the unscaled monomial basis
+h = max(sqrt(sum(X.^2,2)));
+Xs = X/h; %scaled points
+
+
+%Calculate the matrix of the values of monomials, with rows corresponding to points in Xs
+polvalues = monomials(Xs,porder);
+
+
+% compute w
+if mu == 0
+    
+    % compute SVD decomposition of polvalues 
+    % (in the standard form of general linear least squares the SVD of the transposed matrix polvalues'
+    % is needed polvalues'=USV', which means we simply rename U and V)
+    [V,S,U] = svd(polvalues,'econ');
+    
+    %find indices of (numerically) nonzero singular values
+    s = diag(S);
+    ind = find(s > 100*eps); %length(s)*eps(s(1))); %for tolerance see MATLAB help rank
+                             %changed back to 100*eps since MATLAB's formula for TOL fails for our heavily scaled matrix A
+    
+    %numerical rank and condition number of the matrix polvalues
+    % (using that the singular values are in decreasing order)
+    %condn = S(1,1)/S(no,no);
+    numrank = ind(end);
+    condn = s(1)/s(numrank);
+    
+    %check polynomial exactness (not guaranteed otherwise!) by computing the residual.  
+    % The norm of the residal vector can also be computed (if cz is a vector) directly as
+    % norm(w'*polvalues-cz') but this is far less accurate
+    % Another alternative is actually more accurate than what we are using,
+    % but requires the full matrices U,V rather than those obtained by svd(polvalues,'econ'):
+    % norm(U(:,rank+1:end)*(U(:,rank+1:end)'*cz))
+    % or maybe just norm(cz'*U(:,rank+1:end))? -- see Fredholm alternative for matrices
+    % TODO: test the code below 
+    not_exact = any(abs(U(:,1:numrank)*(U(:,1:numrank)'*cz) - cz) > 100*eps); %indices of operators for which the formula is not exact
+    if any(not_exact)
+        %norm(w'*polvalues-cz') > 1000*eps
+        %norm(U(:,rank+1:end)*(U(:,rank+1:end)'*cz))> 100*eps
+        %norm(cz'*U(:,rank+1:end)) > 100*eps
+        if nonexact_warning
+            warning('L2Stencil: some formulas are not exact for polynomials, defect=')
+            disp(U(:,1:numrank)*(U(:,1:numrank)'*cz) - cz)
+            disp(['return w=NaN, grf2 = Inf for each operator with defect> ',num2str(100*eps)])
+						%figure(1),hold on, plotp(X+z,'r*'),plotp(z,'b*'),hold off %debugging
+        end
+    end
+    
+    
+    %find the scaled weight vector by the formula V(:,1:rank)*inv(S(1:rank,1:rank))*U(:,1:rank)'*cz
+    %with multiplications performed from the right to the left and inversion of S(1:rank,1:rank) done explicitely
+    w = U(:,1:numrank)'*cz;
+    w = bsxfun(@rdivide,w,s(1:numrank)); %divide the columns of w by s(1:rank)
+    w = V(:,1:numrank)*w;
+    
+    %scale the weights back (divide the columns of w by appropriate powers of the scaling coefficient h)
+    w = bsxfun(@rdivide,w,h.^dorder);
+    w(:,not_exact) = NaN;    
+
+    %growth function: 2-norm of the weight vectors (in columns) in this case
+    grf2 = sqrt(sum(w.^2));        
+    grf2(:,not_exact) = Inf;
+    
+else %mu>0
+    
+    %roots of reciprocals of least square weights
+    lsw = sum(Xs.^2,2).^mu; 
+    rlsw = sqrt(lsw);
+    
+    %distinguish the cases when z belongs to Xs or not
+    if rlsw(1) > eps % x_1\ne z, hence z is not in Xs.
+        
+        %divide the rows of polvalues by the components of  rlsw
+        A = bsxfun(@rdivide,polvalues,rlsw);
+        
+        % compute SVD decomposition of A
+        % (in the standard form of general linear least squares the SVD of the transposed matrix A'
+        % is needed, A'=USV', which means we simply rename U and V)
+        [V,S,U] = svd(A,'econ');
+        
+        %find indices of (numerically) nonzero singular values
+        s = diag(S);
+        ind = find(s > 100*eps); %length(s)*eps(s(1))); %for tolerance see MATLAB help rank
+       
+        %numerical rank and condition number of the matrix polvalues
+        % (using that the singular values are in decreasing ordering)
+        condn = S(1,1)/S(no,no);
+        numrank = ind(end);
+        %condn = s(1)/s(numrank);
+        
+        %check polynomial exactness by computing the the residual   
+        % (see the case mu==0 for alternatives
+        not_exact = any(abs(U(:,1:numrank)*(U(:,1:numrank)'*cz) - cz) > 100*eps);
+        if any(not_exact)
+            if nonexact_warning
+                warning('the formula is not exact for polynomials, defect=')
+                disp(U(:,1:numrank)*(U(:,1:numrank)'*cz) - cz)
+                disp(['return w=NaN, grf2 = Inf for each operator with defect> ',num2str(100*eps)])
+								%figure(1),hold on, plotp(X+z,'r*'),plotp(z,'b*'),hold off %debugging
+            end
+        end
+        
+        %find the scaled weight vector by the formula V(:,1:rank)*inv(S(1:rank,1:rank))*U(:,1:rank)'*cz
+        %with multiplications performed from the right to the left and inversion of S(1:rank,1:rank) done explicitely
+        w = U(:,1:numrank)'*cz;
+        w = bsxfun(@rdivide,w,s(1:numrank)); %divide the columns of w by s(1:rank)
+        w = V(:,1:numrank)*w;
+        
+        %divide the components of each column of w by the components of  rlsw
+        w = bsxfun(@rdivide,w,rlsw);              
+        
+    else % x_1=z (this case is in fact not needed when dorder=0)
+        
+        % remove the first component of rlsw, invert and build a diagonal matrix
+        rlsw = rlsw(2:end);
+        
+        %divide the rows of polvalues with first row and column removed by the components of  rlsw
+        A = bsxfun(@rdivide,polvalues(2:end,2:end),rlsw);
+        
+        % compute SVD decomposition of A
+        % (in the standard form of general linear least squares the SVD of the transposed matrix A'
+        % is needed, A'=USV', which means we simply rename U and V)
+        [V,S,U] = svd(A,'econ');
+        
+        %find indices of (numerically) nonzero singular values
+        s = diag(S);
+        ind = find(s > 100*eps); %length(s)*eps(s(1))); %for tolerance see MATLAB help rank
+       
+        %numerical rank and condition number of the matrix polvalues
+        % (using that the singular values are in decreasing order)
+        %condn = S(1,1)/S(no,no);
+        numrank = ind(end);
+        condn = s(1)/s(numrank);
+        
+        % remove the first row of cz
+        b = cz(2:end,:);
+          
+        %check polynomial exactness by computing the residual   
+        % (see the case mu==0 for alternatives)
+        not_exact = any(abs(U(:,1:numrank)*(U(:,1:numrank)'*b) - b) > 100*eps);
+        if any(not_exact)
+            if nonexact_warning
+                warning('the formula is not exact for polynomials, defect=')
+                disp(U(:,1:numrank)*(U(:,1:numrank)'*b) - b)
+                disp(['return w=NaN, grf2 = Inf for each operator with defect> ',num2str(100*eps)])
+								%figure(1),hold on, plotp(X+z,'r*'),plotp(z,'b*'),hold off %debugging
+            end
+
+        end
+        
+        
+        %find the scaled weight vector by the formula V(:,1:rank)*inv(S(1:rank,1:rank))*U(:,1:rank)'*cz
+        %with multiplications performed from the right to the left and inversion of S(1:rank,1:rank) done explicitely
+        w = U(:,1:numrank)'*b;
+        w = bsxfun(@rdivide,w,s(1:numrank)); %divide the columns of w by s(1:rank)
+        w = V(:,1:numrank)*w;
+        
+        %divide the components of each column of w by the components of  rlsw
+        w = bsxfun(@rdivide,w,rlsw);
+        
+        % compute and add the first component from the exactness on constants
+        w = [cz(1,:) - sum(w); w];
+          
+    end
+    
+
+    %scale the weights back (divide the columns of w by appropriate powers of the scaling coefficient h;
+    %this is not needed for operators with dorder=0)
+    w = bsxfun(@rdivide,w,h.^dorder);
+    w(:,not_exact) = NaN;
+       
+    
+    %||.||_{2,mu} growth functions with q=order, mu 
+    grf2 = sqrt((sum(X.^2,2).^mu)'*(w.*w));   
+    %grf2 = sqrt(lsw*(w.*w)); %this formula is wrong because it uses unscaled weights and scaled X!
+    grf2(:,not_exact) = Inf;
+    
+
+    
+end %end of mu>0
+
+if any(not_exact)
+    updateSTATS('set','poly_notexact',['(',mfilename,') Stencil is not exact for polynomial order ',int2str(porder)])
+end
+
+% if condn > 1e15
+%     warning('condn too big')
+% end
+
+%assert(~any(isnan(w)))
